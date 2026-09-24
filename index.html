@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logro Desbloqueado: The End?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --voice-1: #00AAAA; /* Minecraft Dark Aqua */
+            --voice-2: #55FF55; /* Minecraft Light Green */
+            --yellow: #FFFF55;  /* Minecraft Yellow */
+            --bg-color: #0b0213; /* Deep End Void Purple */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #FFFFFF;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden; /* Hide scrollbars, JS will handle scrolling */
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Canvas for the End portal/void particles */
+        #end-void {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #credits-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            /* Allow scrolling manually if user swipes */
+            overflow-y: hidden; 
+        }
+
+        #scrolling-content {
+            /* Start positioned below the screen */
+            transform: translateY(100vh);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            padding-bottom: 50vh; /* Extra padding so the final message can reach the center */
+        }
+
+        p {
+            line-height: 2;
+            font-size: clamp(10px, 3.5vw, 16px); /* Responsive font size */
+            margin-bottom: 3rem;
+            text-shadow: 2px 2px 0px #000; /* Classic blocky drop shadow */
+            word-wrap: break-word;
+        }
+
+        .voice1 {
+            color: var(--voice-1);
+        }
+
+        .voice2 {
+            color: var(--voice-2);
+        }
+
+        .final-message {
+            color: var(--yellow);
+            font-size: clamp(12px, 4vw, 18px);
+            margin-top: 15vh;
+            line-height: 2.2;
+            text-shadow: 2px 2px 0px #000;
+            animation: blink 3s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Optional: A small prompt to skip/speed up */
+        .skip-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 8px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="end-void"></canvas>
+
+    <div id="credits-container">
+        <div id="scrolling-content">
+            <p class="voice1">— Veo al jugador del que hablas.</p>
+            <p class="voice2">— ¿Mirko?</p>
+            <p class="voice1">— Sí. Ha alcanzado un nivel superior ahora.</p>
+            <p class="voice2">— Me gusta este jugador. Jugó bien. No se rindió cuando la dificultad aumentó.</p>
+            <p class="voice1">— Está leyendo nuestros pensamientos como si fueran palabras en una pantalla.</p>
+            <p class="voice2">— Así es como elige imaginar muchas cosas, cuando está inmerso en el sueño del juego.</p>
+            <p class="voice1">— Las palabras son una interfaz maravillosa. Muy flexibles. Y menos aterradoras que mirar fijamente la realidad detrás de la pantalla.</p>
+            <p class="voice2">— Solía escuchar voces en los días en que era solo un estudiante, cuando jugaba a prepararse para el mundo.</p>
+            <p class="voice1">— Y ahora ha completado esta etapa.</p>
+            <p class="voice2">— Y el universo dijo: has jugado bien.</p>
+            <p class="voice1">— Y el universo dijo: todo lo que necesitas está dentro de ti.</p>
+            <p class="voice2">— Y el universo dijo: eres más fuerte de lo que crees.</p>
+            <p class="voice1">— Y el universo dijo: el próximo nivel te está esperando.</p>
+            <p class="voice2">— Y el jugador despertó de un sueño. Y el jugador empezó un nuevo sueño.</p>
+            <p class="voice1">— Tú eres el jugador.</p>
+            <p class="voice2">— Despierta, Mirko.</p>
+
+            <div class="final-message" id="final-msg">
+                Felicidades por el título, Mirko.<br><br>
+                ¿Listo para la campaña principal?
+            </div>
+        </div>
+    </div>
+
+    <div class="skip-hint">Mantén presionado para acelerar</div>
+
+    <script>
+        const canvas = document.getElementById('end-void');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            createParticles();
+        }
+
+        // Particle class for the End dust effect
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                // Tiny square particles
+                this.size = Math.random() * 2 + 1; 
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                // Purple, pink, and dark grey tones
+                const colors = ['#800080', '#4B0082', '#FF00FF', '#333333'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Wrap around edges
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                // Draw square particles (Minecraft style)
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.globalAlpha = 1.0; // Reset
+            }
+        }
+
+        function createParticles() {
+            particles = [];
+            const numberOfParticles = Math.floor((width * height) / 5000); // Responsive amount
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw a subtle radial gradient to mimic the void depth
+            const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
+            gradient.addColorStop(0, '#150524');
+            gradient.addColorStop(1, '#05010a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        animateParticles();
+
+        const content = document.getElementById('scrolling-content');
+        const finalMsg = document.getElementById('final-msg');
+        
+        let currentY = window.innerHeight;
+        let baseSpeed = 0.4; // Very slow and dramatic, like the real game
+        let currentSpeed = baseSpeed;
+        let animationId;
+        let scrollingFinished = false;
+
+        function scrollCredits() {
+            if (scrollingFinished) return;
+
+            currentY -= currentSpeed;
+            content.style.transform = `translateY(${currentY}px)`;
+
+            // Get position of the final message relative to the viewport
+            const rect = finalMsg.getBoundingClientRect();
+            
+            // Stop when the final message is vertically centered
+            if (rect.top <= (window.innerHeight / 2) - (rect.height / 2)) {
+                scrollingFinished = true;
+                return; // Stop animation loop
+            }
+
+            animationId = requestAnimationFrame(scrollCredits);
+        }
+
+        // Start scrolling on load
+        window.onload = () => {
+            animationId = requestAnimationFrame(scrollCredits);
+        };
+
+        // Speed up when touching/holding (Mobile + Desktop)
+        const speedUp = () => { if (!scrollingFinished) currentSpeed = 3.0; };
+        const slowDown = () => { if (!scrollingFinished) currentSpeed = baseSpeed; };
+
+        window.addEventListener('mousedown', speedUp);
+        window.addEventListener('mouseup', slowDown);
+        window.addEventListener('touchstart', speedUp);
+        window.addEventListener('touchend', slowDown);
+    </script>
+</body>
+</html>
