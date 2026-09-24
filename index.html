@@ -26,12 +26,36 @@
             background-color: var(--bg-color);
             color: #FFFFFF;
             font-family: 'Press Start 2P', monospace;
-            overflow: hidden; /* Hide scrollbars, JS will handle scrolling */
+            overflow: hidden; /* Ocultar scrollbars */
             width: 100vw;
             height: 100vh;
         }
 
-        /* Canvas for the End portal/void particles */
+        /* Pantalla de inicio para permitir reproducción de audio */
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .blink-text {
+            color: var(--voice-2);
+            font-size: clamp(12px, 4vw, 20px);
+            line-height: 1.5;
+            animation: blink 2s infinite;
+        }
+
+        /* Canvas para las partículas del vacío */
         #end-void {
             position: fixed;
             top: 0;
@@ -51,34 +75,28 @@
             z-index: 2;
             display: flex;
             justify-content: center;
-            /* Allow scrolling manually if user swipes */
             overflow-y: hidden; 
         }
 
         #scrolling-content {
-            /* Start positioned below the screen */
+            /* Inicia posicionado debajo de la pantalla visible */
             transform: translateY(100vh);
             width: 90%;
             max-width: 600px;
             text-align: center;
-            padding-bottom: 50vh; /* Extra padding so the final message can reach the center */
+            padding-bottom: 50vh; 
         }
 
         p {
             line-height: 2;
-            font-size: clamp(10px, 3.5vw, 16px); /* Responsive font size */
+            font-size: clamp(10px, 3.5vw, 16px); 
             margin-bottom: 3rem;
-            text-shadow: 2px 2px 0px #000; /* Classic blocky drop shadow */
+            text-shadow: 2px 2px 0px #000; 
             word-wrap: break-word;
         }
 
-        .voice1 {
-            color: var(--voice-1);
-        }
-
-        .voice2 {
-            color: var(--voice-2);
-        }
+        .voice1 { color: var(--voice-1); }
+        .voice2 { color: var(--voice-2); }
 
         .final-message {
             color: var(--yellow);
@@ -94,7 +112,6 @@
             50% { opacity: 0.3; }
         }
         
-        /* Optional: A small prompt to skip/speed up */
         .skip-hint {
             position: fixed;
             bottom: 20px;
@@ -107,8 +124,19 @@
 </head>
 <body>
 
+    
+    <!-- Elemento de audio: Busca el archivo 'musica.mp3' -->
+    <audio id="bg-music" src="musica.mp3" loop></audio>
+
+    <!-- Capa de interacción inicial -->
+    <div id="start-overlay">
+        <div class="blink-text">Toca la pantalla para continuar...</div>
+    </div>
+
+    <!-- Fondo animado -->
     <canvas id="end-void"></canvas>
 
+    <!-- Contenedor del Poema -->
     <div id="credits-container">
         <div id="scrolling-content">
             <p class="voice1">— Veo al jugador del que hablas.</p>
@@ -129,7 +157,7 @@
             <p class="voice2">— Despierta, Mirko.</p>
 
             <div class="final-message" id="final-msg">
-                Felicidades Mirko.<br><br>
+                Felicidades por el título, Mirko.<br><br>
                 ¿Listo para la campaña principal?
             </div>
         </div>
@@ -138,6 +166,7 @@
     <div class="skip-hint">Mantén presionado para acelerar</div>
 
     <script>
+        // Lógica del Canvas y partículas
         const canvas = document.getElementById('end-void');
         const ctx = canvas.getContext('2d');
 
@@ -152,16 +181,13 @@
             createParticles();
         }
 
-        // Particle class for the End dust effect
         class Particle {
             constructor() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                // Tiny square particles
                 this.size = Math.random() * 2 + 1; 
                 this.speedY = (Math.random() - 0.5) * 0.5;
                 this.speedX = (Math.random() - 0.5) * 0.5;
-                // Purple, pink, and dark grey tones
                 const colors = ['#800080', '#4B0082', '#FF00FF', '#333333'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
                 this.opacity = Math.random() * 0.5 + 0.1;
@@ -171,7 +197,6 @@
                 this.x += this.speedX;
                 this.y += this.speedY;
 
-                // Wrap around edges
                 if (this.x < 0) this.x = width;
                 if (this.x > width) this.x = 0;
                 if (this.y < 0) this.y = height;
@@ -181,15 +206,14 @@
             draw() {
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = this.opacity;
-                // Draw square particles (Minecraft style)
                 ctx.fillRect(this.x, this.y, this.size, this.size);
-                ctx.globalAlpha = 1.0; // Reset
+                ctx.globalAlpha = 1.0; 
             }
         }
 
         function createParticles() {
             particles = [];
-            const numberOfParticles = Math.floor((width * height) / 5000); // Responsive amount
+            const numberOfParticles = Math.floor((width * height) / 5000); 
             for (let i = 0; i < numberOfParticles; i++) {
                 particles.push(new Particle());
             }
@@ -198,7 +222,6 @@
         function animateParticles() {
             ctx.clearRect(0, 0, width, height);
             
-            // Draw a subtle radial gradient to mimic the void depth
             const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             gradient.addColorStop(0, '#150524');
             gradient.addColorStop(1, '#05010a');
@@ -216,11 +239,14 @@
         resizeCanvas();
         animateParticles();
 
+        // Lógica de Scroll y Audio
         const content = document.getElementById('scrolling-content');
         const finalMsg = document.getElementById('final-msg');
+        const overlay = document.getElementById('start-overlay');
+        const bgMusic = document.getElementById('bg-music');
         
         let currentY = window.innerHeight;
-        let baseSpeed = 0.4; // Very slow and dramatic, like the real game
+        let baseSpeed = 0.4; 
         let currentSpeed = baseSpeed;
         let animationId;
         let scrollingFinished = false;
@@ -231,24 +257,29 @@
             currentY -= currentSpeed;
             content.style.transform = `translateY(${currentY}px)`;
 
-            // Get position of the final message relative to the viewport
             const rect = finalMsg.getBoundingClientRect();
             
-            // Stop when the final message is vertically centered
             if (rect.top <= (window.innerHeight / 2) - (rect.height / 2)) {
                 scrollingFinished = true;
-                return; // Stop animation loop
+                return; 
             }
 
             animationId = requestAnimationFrame(scrollCredits);
         }
 
-        // Start scrolling on load
-        window.onload = () => {
+        // Evento principal: Al tocar la pantalla de inicio
+        overlay.addEventListener('click', () => {
+            // 1. Reproducir la música
+            bgMusic.play().catch(e => console.log("La reproducción automática de audio fue bloqueada:", e));
+            
+            // 2. Ocultar la pantalla de inicio
+            overlay.style.display = 'none';
+            
+            // 3. Comenzar a desplazar los créditos
             animationId = requestAnimationFrame(scrollCredits);
-        };
+        });
 
-        // Speed up when touching/holding (Mobile + Desktop)
+        // Acelerar al mantener presionado (Móvil + Escritorio)
         const speedUp = () => { if (!scrollingFinished) currentSpeed = 3.0; };
         const slowDown = () => { if (!scrollingFinished) currentSpeed = baseSpeed; };
 
